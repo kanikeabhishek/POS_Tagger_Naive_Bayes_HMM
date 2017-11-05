@@ -77,15 +77,17 @@ class Solver:
                 self.P_word_pos[gt_pos][word] /= float(total_words_pos)
 
     # Functions for each algorithm.
-    #used bayes law to calculate P(pos/Word) = argmax(P(word/pos) * inital probabilty[pos])
+    #
     def simplified(self, sentence):
         sentence_pos = []
         for word in sentence:
             (max_prob, max_pos) = (0, '')
             for cur_pos in self.ALL_POS:
                 if word in self.P_word_pos[cur_pos]:
-                    prob_pos_word = self.P_word_pos[cur_pos][word] * self.P_initial[cur_pos]
-                    (max_prob, max_pos) = max((max_prob, max_pos), (prob_pos_word, cur_pos))
+                    numerator = self.P_word_pos[cur_pos][word] * self.P_pos[cur_pos]
+                    denominator = (self.P_word_pos[cur_pos][word] * self.P_pos[cur_pos]) \
+                                + ((1 - self.P_word_pos[cur_pos][word]) * (1 - self.P_pos[cur_pos]))
+                    (max_prob, max_pos) = max((max_prob, max_pos), (float(numerator)/float(denominator), cur_pos))
             sentence_pos.append(max_pos)
         return sentence_pos
 
