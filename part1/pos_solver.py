@@ -67,7 +67,7 @@ class Solver:
         for cur_pos in self.P_transition:
             total = sum(self.P_transition[cur_pos].values())
             for next_pos in self.P_transition[cur_pos]:
-                self.P_transition[cur_pos][next_pos] /= total
+                self.P_transition[cur_pos][next_pos] /= float(total)
 
         # Caluclate Emission probabilities of word | pos as hash of pos of word
         for gt_pos in self.P_pos:
@@ -75,7 +75,7 @@ class Solver:
             total_words_pos = sum([count for word, count in self.P_word_pos[gt_pos].items()])
             for word in self.P_word_pos[gt_pos]:
                 self.P_word_pos[gt_pos][word] /= float(total_words_pos)
-
+        #print(self.P_word_pos)
     # Functions for each algorithm.
     #
     def simplified(self, sentence):
@@ -95,7 +95,54 @@ class Solver:
         return [ "noun" ] * len(sentence)
 
     def hmm_viterbi(self, sentence):
-        return [ "noun" ] * len(sentence)
+
+        self.t_prob = {}#{i:ALL_POS for i in range(len(ALL_POS))for pos in ALL_POS}
+        viterbi_dp_table = { i:dict() for i in range(len(sentence))}
+
+        for i in range(len(sentence)):
+            self.t_prob[i] = {}
+            word = sentence[i]
+
+            for pos in Solver.ALL_POS:
+                self.t_prob[i][pos] = 0
+
+            if(i==0):
+                for cur_pos in Solver.ALL_POS:
+                    if(word in self.P_word_pos[cur_pos]):
+                        self.t_prob[0][cur_pos] = self.P_initial[cur_pos] * self.P_word_pos[cur_pos][word]
+                    else:
+                        self.t_prob[0][cur_pos] = self.P_initial[cur_pos] * 0.0000001
+            else:
+                for cur_pos in Solver.ALL_POS:
+                    max_probability = 0
+                    max_pos = ''
+                    for prev_pos in Solver.ALL_POS:
+                        if(word in self.P_word_pos[cur_pos]):
+                            prob = self.t_prob[i-1][prev_pos]\
+                                     * self.P_transition[cur_pos][prev_pos]\
+                                     * self.P_word_pos[cur_pos][word]
+                        else:
+                            prob = self.t_prob[i-1][prev_pos]\
+                                     * self.P_transition[cur_pos][prev_pos]\
+                                     * 0.0000001
+                        
+                        if(max_probability < prob):
+                            max_probability = prob
+                            max_pos = prev_pos
+
+                    self.t_prob[i][cur_pos] = max_probability
+                    viterbi_dp_table[i][cur_pos] = max_pos
+
+        sequence = []
+        sequence.append(max(self.t_prob[len(sentence)-1].iterkeys(),key = lambda k:self.t_prob[len(sentence)-1][k]))
+        for i in range(len(sentence)-1,0,-1):
+            cur_pos = sequence[-1]
+            for key_pos in viterbi_dp_table[i].keys():
+                if(key_pos == cur_pos):
+                    sequence.append(viterbi_dp_table[i][key_pos])
+        sequence.reverse()
+        return sequence
+        #return [ "noun" ] * len(sentence)
 
 
     # This solve() method is called by label.py, so you should keep the interface the
