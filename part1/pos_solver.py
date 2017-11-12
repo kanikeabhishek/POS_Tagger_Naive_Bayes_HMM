@@ -27,7 +27,22 @@ class Solver:
     # Calculate the log of the posterior probability of a given sentence
     #  with a given part-of-speech labeling
     def posterior(self, sentence, label):
-        return 0
+        self.posterior_prob = 1
+
+        for index in range(len(sentence)):
+            word,pos = (sentence[index],label[index])
+            if(index == 0):
+                if(word in self.P_word_pos[pos]):
+                    self.posterior_prob *= self.P_initial[pos] * self.P_word_pos[pos][word]
+                else:
+                    self.posterior_prob *= self.P_initial[pos] * 0.0000001
+            else:
+                if(word in self.P_word_pos[pos]):
+                    self.posterior_prob *= self.P_transition[pos][label[index-1]] * self.P_word_pos[pos][word]
+                else:
+                    self.posterior_prob *= self.P_transition[pos][label[index-1]] * 0.0000001
+
+        return math.log(self.posterior_prob) if self.posterior_prob > 0 else 0
 
     # Do the training!
     #
@@ -151,8 +166,8 @@ class Solver:
 
     def hmm_viterbi(self, sentence):
 
-        self.t_prob = {}#{i:ALL_POS for i in range(len(ALL_POS))for pos in ALL_POS}
-        viterbi_dp_table = { i:dict() for i in range(len(sentence))}
+        self.t_prob = {}
+        self.viterbi_dp_table = { i:dict() for i in range(len(sentence))}
 
         for i in range(len(sentence)):
             self.t_prob[i] = {}
@@ -180,21 +195,21 @@ class Solver:
                             prob = self.t_prob[i-1][prev_pos]\
                                      * self.P_transition[cur_pos][prev_pos]\
                                      * 0.0000001
-                        
+
                         if(max_probability < prob):
                             max_probability = prob
                             max_pos = prev_pos
 
                     self.t_prob[i][cur_pos] = max_probability
-                    viterbi_dp_table[i][cur_pos] = max_pos
+                    self.viterbi_dp_table[i][cur_pos] = max_pos
 
         sequence = []
         sequence.append(max(self.t_prob[len(sentence)-1].iterkeys(),key = lambda k:self.t_prob[len(sentence)-1][k]))
         for i in range(len(sentence)-1,0,-1):
             cur_pos = sequence[-1]
-            for key_pos in viterbi_dp_table[i].keys():
+            for key_pos in self.viterbi_dp_table[i].keys():
                 if(key_pos == cur_pos):
-                    sequence.append(viterbi_dp_table[i][key_pos])
+                    sequence.append(self.viterbi_dp_table[i][key_pos])
         sequence.reverse()
         return sequence
         #return [ "noun" ] * len(sentence)
