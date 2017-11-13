@@ -126,10 +126,10 @@ class Solver:
                     P_Factors = 0.0
                     if word in self.P_word_pos[cur_pos]:
                         for prev_pos in self.ALL_POS:
-                            P_Factors += self.P_transition[prev_pos][cur_pos] * self.P_word_pos[cur_pos][word] * tau_table[-2][-1][prev_pos]
+                            P_Factors += self.P_transition[cur_pos][prev_pos] * self.P_word_pos[cur_pos][word] * tau_table[-2][-1][prev_pos]
                     else:
                         for prev_pos in self.ALL_POS:
-                            P_Factors += self.P_transition[prev_pos][cur_pos] * 0.0000001 * tau_table[-2][-1][prev_pos]
+                            P_Factors += self.P_transition[cur_pos][prev_pos] * 0.0000001 * tau_table[-2][-1][prev_pos]
                     tau_table[-1][-1][cur_pos] = P_Factors
 
         # Backward Elimination
@@ -139,17 +139,17 @@ class Solver:
                 for prev_pos in self.ALL_POS:
                     for cur_pos in self.ALL_POS:
                         if word in self.P_word_pos[cur_pos]:
-                            P_Factors += self.P_transition[prev_pos][cur_pos] * self.P_word_pos[cur_pos][word]
+                            P_Factors += self.P_transition[cur_pos][prev_pos] * self.P_word_pos[cur_pos][word]
                         else:
-                            P_Factors += self.P_transition[prev_pos][cur_pos] * 0.0000001
+                            P_Factors += self.P_transition[cur_pos][prev_pos] * 0.0000001
                     tau_table[-counter][-1][prev_pos] = P_Factors
             else:
                 for prev_pos in self.ALL_POS:
                     for cur_pos in self.ALL_POS:
                         if word in self.P_word_pos[cur_pos]:
-                            P_Factors += self.P_transition[prev_pos][cur_pos] * self.P_word_pos[cur_pos][word] * tau_table[-counter+1][-1][cur_pos]
+                            P_Factors += self.P_transition[cur_pos][prev_pos] * self.P_word_pos[cur_pos][word] * tau_table[-counter+1][-1][cur_pos]
                         else:
-                            P_Factors += self.P_transition[prev_pos][cur_pos] * 0.0000001 * tau_table[-counter+1][-1][cur_pos]
+                            P_Factors += self.P_transition[cur_pos][prev_pos] * 0.0000001 * tau_table[-counter+1][-1][cur_pos]
                     tau_table[-counter][-1][prev_pos] = P_Factors
 
         # Calculate Maximum probability of each word belonging to a POS, independent of other words
@@ -163,6 +163,7 @@ class Solver:
             sentence_pos.append(max_pos)
 
         return sentence_pos
+
 
     def hmm_viterbi(self, sentence):
 
