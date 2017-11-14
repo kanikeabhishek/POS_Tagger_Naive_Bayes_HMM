@@ -57,6 +57,11 @@ def calculate_initial_prob(train_file):
 
 
 def calculate_transition_probability(train_file):
+    """
+    calculate the transition probability
+    :param train_file: Train file name
+    :return:
+    """
     initial_transition_count= {letter1: {letter2: 0 for letter2 in LETTERS} for letter1 in LETTERS}
     for le in initial_transition_count:
         initial_transition_count[le]['End'] = 0
@@ -84,6 +89,10 @@ def calculate_emission():
 
 
 def train_emission():
+    """
+    Get P(Image_pixel|Letter)
+    :return:
+    """
     black_e=[]
 
     for i in range(0,25):
@@ -104,6 +113,10 @@ def train_emission():
 
 
 def simplified():
+    """
+    Simplified classification
+    :return:
+    """
     prob=[]
     recog = ''
 
@@ -131,72 +144,91 @@ def simplified():
     return prob
 
 
-def hmm_ve(observations, states, start_prob, trans_prob, emm_prob, end_st):
-    # forward part of the algorithm
-    fwd = []
-    f_prev = {}
-    for i, observation_i in enumerate(observations):
-        f_curr = {}
-        for st in states:
-            if i == 0:
-                # base case for the forward part
-                prev_f_sum = start_prob[st]
+def hmm_ve():
+    """
+    Variable elimination
+    :return:
+    """
+    recog = []
+    tau_prev = {}
+    for counter, image_num in enumerate(image):
+        tau_curr = {}
+        for le in LETTERS:
+            if counter == 0:
+                prev_tau_sum = initial_prob[le]
             else:
-                prev_f_sum = sum(f_prev[k]+trans_prob[k][st] for k in states)
+                prev_tau=[]
+                for l in LETTERS:
+                    prev_tau.append(tau_prev[l]+transition_prob[l][le])
+                prev_tau_sum = sum(prev_tau)
+            tau_curr[le] = emi[le][image_num] * prev_tau_sum
+        recog.append(tau_curr)
+        tau_prev = tau_curr
+    print 'HMM VE: ' + ''.join(min(recog[i],key=recog[i].get) for i in range(len(recog)))
 
-            f_curr[st] = emm_prob[st][observation_i] * prev_f_sum
 
-        fwd.append(f_curr)
-        f_prev = f_curr
-    print 'HMM VE: ' + ''.join(min(fwd[i],key=fwd[i].get) for i in range(len(fwd)))
-
-
-
-
+# For Viterbi, the code was implemented base on the pseudocode in
+# https://en.wikipedia.org/wiki/Viterbi_algorithm
 def hmm_viterbi():
+    """
+    Viterbi using dynamic programming
+    :return:
+    """
     V = [{}]
-    for st in LETTERS:
-        V[0][st] = {"prob": initial_prob[st] + emi[st][obs[0]], "prev": None}
-    # Run Viterbi when t > 0
-    for t in range(1, len(obs)):
+    # base case
+    for le in LETTERS:
+        V[0][le] = {"log": initial_prob[le] + emi[le][image[0]], "prev": None}
+    for t in range(1, len(image)):
         V.append({})
-        for st in LETTERS:
-            max_tr_prob = min(V[t-1][prev_st]["prob"] + transition_prob[prev_st][st] for prev_st in LETTERS)
-            for prev_st in LETTERS:
-                if V[t-1][prev_st]["prob"] + transition_prob[prev_st][st] == max_tr_prob:
-                    min_log = max_tr_prob + emi[st][obs[t]]
-                    V[t][st] = {"prob": min_log, "prev": prev_st}
+        for le in LETTERS:
+            log_temp =[]
+            for prev_letter in LETTERS:
+                log_temp.append(V[t-1][prev_letter]["log"] + transition_prob[prev_letter][le])
+            min_le_log = min(log_temp)
+            for prev_letter in LETTERS:
+                if V[t-1][prev_letter]["log"] + transition_prob[prev_letter][le] == min_le_log:
+                    min_log = min_le_log + emi[le][image[t]]
+                    V[t][le] = {"log": min_log, "prev": prev_letter}
                     break
-    opt = []
-    # The lowest log
-    min_log = min(value["prob"] for value in V[-1].values())
+    recog = []
+    log=[]
+    for value in V[-1].values():
+        log.append(value["log"])
+    min_log = min(log)
     previous = None
-    # Get most probable state and its backtrack
-    for st, data in V[-1].items():
-        if data["prob"] == min_log:
-            opt.append(st)
-            previous = st
+
+    for le, data in V[-1].items():
+        if data["log"] == min_log:
+            recog.append(le)
+            previous = le
             break
-     # Follow the backtrack till the first observation
+
     for t in range(len(V) - 2, -1, -1):
-        opt.insert(0, V[t + 1][previous]["prev"])
+        recog.insert(0, V[t + 1][previous]["prev"])
         previous = V[t + 1][previous]["prev"]
 
-    print 'HMM MAP: '+''.join(opt)
+    print 'HMM MAP: '+''.join(recog)
 
 
 #####
 # main program
+
 (train_img_fname, train_txt_fname, test_img_fname) = sys.argv[1:]
 train_txt = read_train_file(train_txt_fname)
 train_letters = load_training_letters(train_img_fname)
 test_letters = load_letters(test_img_fname)
-obs = [c for c in range(len(test_letters))]
+image = [c for c in range(len(test_letters))]
 
+# get initial probability
 initial_prob = calculate_initial_prob(train_txt)
+# get transition probability
 transition_prob = calculate_transition_probability(train_txt)
+# Get P(Image_pixel|Letter) in order to calculate P(Image|Letter)
 emission_prob = train_emission()
-prob=simplified()
+
+# calculate the probability while do the simplified classification
+prob = simplified()
+# put the emission probability in to format {Letter:{Image:prob...}...}
 emi = calculate_emission()
-hmm_ve(obs,LETTERS,initial_prob,transition_prob,emi,'End')
+hmm_ve()
 hmm_viterbi()
