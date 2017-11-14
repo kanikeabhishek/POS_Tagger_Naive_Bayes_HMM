@@ -137,6 +137,7 @@ class Solver:
             tau_table[-counter].append({})
             if counter == 1:
                 for prev_pos in self.ALL_POS:
+                    P_Factors = 0.0
                     for cur_pos in self.ALL_POS:
                         if word in self.P_word_pos[cur_pos]:
                             P_Factors += self.P_transition[cur_pos][prev_pos] * self.P_word_pos[cur_pos][word]
@@ -145,6 +146,7 @@ class Solver:
                     tau_table[-counter][-1][prev_pos] = P_Factors
             else:
                 for prev_pos in self.ALL_POS:
+                    P_Factors = 0.0
                     for cur_pos in self.ALL_POS:
                         if word in self.P_word_pos[cur_pos]:
                             P_Factors += self.P_transition[cur_pos][prev_pos] * self.P_word_pos[cur_pos][word] * tau_table[-counter+1][-1][cur_pos]
