@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 ###################################
 # CS B551 Fall 2017, Assignment #3
 #
@@ -10,7 +11,6 @@
 # Put your report here!!
 ####
 
-import random
 import math
 from collections import Counter
 
@@ -19,13 +19,17 @@ from collections import Counter
 # that we've supplied.
 #
 class Solver:
-
-    P_word_pos = {}
-    P_pos = {}
-    P_transition = {}
+    # All possible part of speech
     ALL_POS = ['adj', 'adv', 'adp', 'conj', 'det', 'noun', 'num', 'pron', 'prt', 'verb', 'x', '.']
+    # Emission probablity
+    P_word_pos = {}
+    # Prior Probability
+    P_pos = {}
+    # Transition probablity
+    P_transition = {}
+
     # Calculate the log of the posterior probability of a given sentence
-    #  with a given part-of-speech labeling
+    # with a given part-of-speech labeling
     def posterior(self, sentence, label):
         self.posterior_prob = 1
 
@@ -44,15 +48,18 @@ class Solver:
 
         return math.log(self.posterior_prob) if self.posterior_prob > 0 else 0
 
-    # Do the training!
+    # Initialize transition probability
     #
 
     def initialilze_transition_probability(self):
         return {pos1: {pos2: 0 for pos2 in self.ALL_POS} for pos1 in self.ALL_POS}
 
+    # Do the training!
+    #
 
     def train(self, data):
         number_of_words = 0
+
         # Initialize transition probability
         self.P_transition = self.initialilze_transition_probability()
 
@@ -90,9 +97,11 @@ class Solver:
             total_words_pos = sum([count for word, count in self.P_word_pos[gt_pos].items()])
             for word in self.P_word_pos[gt_pos]:
                 self.P_word_pos[gt_pos][word] /= float(total_words_pos)
-        #print(self.P_word_pos)
+
+
     # Functions for each algorithm.
     #
+
     def simplified(self, sentence):
         sentence_pos = []
         for word in sentence:
@@ -106,6 +115,9 @@ class Solver:
             sentence_pos.append(max_pos)
         return sentence_pos
 
+    # Variable Elimination
+    #
+
     def hmm_ve(self, sentence):
         sentence_pos = []
         tau_table = []
@@ -117,9 +129,9 @@ class Solver:
             if counter == 0:
                 for cur_pos in self.ALL_POS:
                     if word in self.P_word_pos[cur_pos]:
-                        P_Factors = self.P_word_pos[cur_pos][word] * self.P_pos[cur_pos]
+                        P_Factors = self.P_word_pos[cur_pos][word] * self.P_initial[cur_pos]
                     else:
-                        P_Factors = 0.0000001 * self.P_pos[cur_pos]
+                        P_Factors = 0.0000001 * self.P_initial[cur_pos]
                     tau_table[-1][-1][cur_pos] = P_Factors
             else:
                 for cur_pos in self.ALL_POS:
@@ -166,6 +178,8 @@ class Solver:
 
         return sentence_pos
 
+    # Viterbi Algorithm
+    #
 
     def hmm_viterbi(self, sentence):
 
@@ -215,7 +229,6 @@ class Solver:
                     sequence.append(self.viterbi_dp_table[i][key_pos])
         sequence.reverse()
         return sequence
-        #return [ "noun" ] * len(sentence)
 
 
     # This solve() method is called by label.py, so you should keep the interface the
