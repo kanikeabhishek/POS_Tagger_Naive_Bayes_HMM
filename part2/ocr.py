@@ -9,7 +9,7 @@
 #########
 # Report:
 #
-# We first training the data the get the initial probability, which is the probability that a sentence
+# We first training the data the get the initial probability P(Letter), which is the probability that a sentence
 # starts with a certain character (total 72 character). Then it was formed into a dictionary in the format
 # of {'A': -log(prob), 'B': -log(prob).....}.
 #
@@ -20,14 +20,24 @@
 # Calculating emission probability P(Image|Letter) is slightly complicated than Part1. Each Image is represented as
 # a 25*14 matrix, so we first need to calculate the probability for each pixel is black(*) P(Image_pixel|Letter).
 # After P(Image_pixel|Letter) is calculated, we insert the testing image and multiply each of them
-# to get the P(Image|Letter). The emission probability is dictionary of dictionaries: {Letter:{Image:prob...}...}
+# to get the P(Image|Letter).
+# P(Image|Letter) = Prod_i:350 P(Image_pixel_i|Letter)
+# The emission probability is dictionary of dictionaries: {Letter:{Image:prob...}...}
 #
-#
-# The simplified Bayes net is easy, same as part1. However one additional condition is added when black pixel is less
-# 8, a -10 weight will be assigned to blank space. The Variable Elimination is similar to part1, and the Viterbi
+# The simplified Bayes net is easy, same as part1.
+# P(Letter|Image) = P(Image|Letter) * P(Letter) / P(Image))
+# letter'[i] = arg min -log(P (Letter[i]  = letter[i]| Image)).
+# Denominator of prior probability is ignored since it will be same for each Image.
+# Note, one additional condition is added when black pixel is less than 8, a -10 weight will be assigned to blank space.
+# The Variable Elimination is similar to part1, while only forward algorithm is used. The Viterbi
 # was implemented using the pseudocode on https://en.wikipedia.org/wiki/Viterbi_algorithm.
 #
-
+#
+# Results:
+# ./ocr.py" courier-train.png bc.train test-17-0.png
+# Simple: It is so ordered.
+# HMM VE: Tt is so ordered.
+# HMM MAP: It is so ordered.
 from __future__ import division
 from PIL import Image, ImageDraw, ImageFont
 import math
