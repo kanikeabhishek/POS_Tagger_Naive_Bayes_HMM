@@ -8,7 +8,7 @@
 #
 #########
 # Report:
-# The training data
+# File 'bc.train' from part1 is used as training data for ocr. We can actually t
 # We first training the data the get the initial probability P(Letter), which is the probability that a sentence
 # starts with a certain character (total 72 character). Then it was formed into a dictionary in the format
 # of {'A': -log(prob), 'B': -log(prob).....}.
