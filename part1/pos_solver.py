@@ -29,6 +29,11 @@ Three probabilities are calculated from the train data to predict part of speech
     first dimension and the word as second dimension
     After all data is parsed, each word's pos is divided by the word appeared as different pos
 
+Posterior Probability:
+    We use the model 1a irrespective of the algorithm(as discussed in class) inorder to calculate the posterior probabilities.
+    Bayes law(applied on Bayes net 1a) is used to calculate the posterior probability given setence and pos of the respective words. The log the posterior probability
+    is returned.
+
 Simplified Model:
     Part of Speech tagging of sentence using simplified follows a simple Naive Bayes expansion
                                 P(S|W) = P(W|S) * P(S) / P(W)
@@ -44,7 +49,7 @@ Variable Elimination:
     In above method ( simplified ) dependency of word in predicting pos of every other word is not handled.
     Hence, solving the question by adding above dependency of words in Bayes Net will prediciting pos of sentence better.
     A tau_table with size equal to number of words in a sentence is created.
-    For each word two dictionaries are created. First dictionary uses the concept of forward elimination where given word 
+    For each word two dictionaries are created. First dictionary uses the concept of forward elimination where given word
     is marginalized overall previous words on pos including current word all pos. Second dictionary stores follows the concept of
     backward elimination where a word is marginalized overall future words on pos including current word all pos.
     At the end for for every word, maximum product of forward eliminated probabilities and backward eliminated probablities is
@@ -66,6 +71,28 @@ Variable Elimination:
         will be marginalized with current word )
                                 tau_table[x[i]][1] = P(x[i] | y[i]) * P(y[i+1] | y[i]) * tau_table(x[i+1])[1]
     Finally for each word, maximum from every pos with forward and backward eliminated values are multiplied and assigned.
+
+Viterbi Algorithm:
+    This algorithm is used to find the most likely sequence of part-of-speech tagging for a given sentence.
+    The algorithm starts off in the forward manner. In the first step the probabilities for all part-of-speech is calculated
+    by multiplying the initial probabilities with the emission probabilities for the first word and in the subsequent steps
+    the trasition probabilities, emission probabilities and probabilities calculated from the previous step are multiplied and stored in
+    t_prob dictionary which has current word position as their keys and probabilities of each pos as their value. Added to that the viterbi_dp_table is used
+    to record the pos which gave the maximum probability in the previous step. This is dictionary which consists of pos in the current step as their keys
+    and pos which produced the maximum probability for the particular pos  from the previous step as its value.
+
+    Back-tracking:
+      After iterating the entire sentence we have got the pos which produced the maximum probabilities in viterbi_dp_table.We begin backtracking by finiding
+      the pos which produced the maximum probability is calculated using t_prob and the pos which gave the maximum probability is added to the sequence.
+      The key value of the pos which has produced the maximum probability in the previous step is searched in viterbi_dp_table with current
+      pos as the value. This process is done until we reach the second word in the sentence. Thus giving us the most likely sequence.
+
+       The mathematical formulation is given below
+
+        Probability of the most likely path ending at state j at a step t+1 is given by
+
+       vj(t+1) = emission_probj(Obv at step t +1) * max [vi(t) trasition_prob[i][j]] for all i in pos
+
 
 Assumption:
     For every new word ( not present in train data ) from test data, probability of word given pos is assigned with 0.0000001
