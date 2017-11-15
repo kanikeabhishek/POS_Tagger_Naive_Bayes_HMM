@@ -52,7 +52,7 @@ class Solver:
     #
 
     def initialilze_transition_probability(self):
-        return {pos1: {pos2: 0 for pos2 in self.ALL_POS} for pos1 in self.ALL_POS}
+        return {pos1: {pos2: 0 for pos2 in Solver.ALL_POS} for pos1 in Solver.ALL_POS}
 
     # Do the training!
     #
@@ -104,14 +104,22 @@ class Solver:
 
     def simplified(self, sentence):
         sentence_pos = []
-        for word in sentence:
+        for counter, word in enumerate(sentence):
             (max_prob, max_pos) = (0, "")
-            for cur_pos in self.ALL_POS:
-                if word in self.P_word_pos[cur_pos]:
-                    P_Factors = self.P_word_pos[cur_pos][word] * self.P_pos[cur_pos]
-                else:
-                    P_Factors = 0.0000001 * self.P_pos[cur_pos]
-                (max_prob, max_pos) = max((max_prob, max_pos), (P_Factors, cur_pos))
+            if counter == 0:
+                for cur_pos in Solver.ALL_POS:
+                    if word in self.P_word_pos[cur_pos]:
+                        P_Factors = self.P_word_pos[cur_pos][word] * self.P_initial[cur_pos]
+                    else:
+                        P_Factors = 0.0000001 * self.P_initial[cur_pos]
+                    (max_prob, max_pos) = max((max_prob, max_pos), (P_Factors, cur_pos))
+            else:
+                for cur_pos in Solver.ALL_POS:
+                    if word in self.P_word_pos[cur_pos]:
+                        P_Factors = self.P_word_pos[cur_pos][word] * self.P_pos[cur_pos]
+                    else:
+                        P_Factors = 0.0000001 * self.P_pos[cur_pos]
+                    (max_prob, max_pos) = max((max_prob, max_pos), (P_Factors, cur_pos))
             sentence_pos.append(max_pos)
         return sentence_pos
 
@@ -127,49 +135,57 @@ class Solver:
             tau_table.append([])
             tau_table[-1].append({})
             if counter == 0:
-                for cur_pos in self.ALL_POS:
+                for cur_pos in Solver.ALL_POS:
                     if word in self.P_word_pos[cur_pos]:
                         P_Factors = self.P_word_pos[cur_pos][word] * self.P_initial[cur_pos]
                     else:
                         P_Factors = 0.0000001 * self.P_initial[cur_pos]
                     tau_table[-1][-1][cur_pos] = P_Factors
             else:
-                for cur_pos in self.ALL_POS:
+                for cur_pos in Solver.ALL_POS:
                     P_Factors = 0.0
                     if word in self.P_word_pos[cur_pos]:
-                        for prev_pos in self.ALL_POS:
-                            P_Factors += self.P_transition[cur_pos][prev_pos] * self.P_word_pos[cur_pos][word] * tau_table[-2][-1][prev_pos]
+                        for prev_pos in Solver.ALL_POS:
+                            P_Factors += self.P_transition[cur_pos][prev_pos] \
+                                         * self.P_word_pos[cur_pos][word] \
+                                         * tau_table[-2][-1][prev_pos]
                     else:
-                        for prev_pos in self.ALL_POS:
-                            P_Factors += self.P_transition[cur_pos][prev_pos] * 0.0000001 * tau_table[-2][-1][prev_pos]
+                        for prev_pos in Solver.ALL_POS:
+                            P_Factors += self.P_transition[cur_pos][prev_pos] \
+                                         * 0.0000001 \
+                                         * tau_table[-2][-1][prev_pos]
                     tau_table[-1][-1][cur_pos] = P_Factors
 
         # Backward Elimination
         for counter, word in enumerate(reversed(sentence), 1):
             tau_table[-counter].append({})
             if counter == 1:
-                for prev_pos in self.ALL_POS:
+                for prev_pos in Solver.ALL_POS:
                     P_Factors = 0.0
-                    for cur_pos in self.ALL_POS:
+                    for cur_pos in Solver.ALL_POS:
                         if word in self.P_word_pos[cur_pos]:
                             P_Factors += self.P_transition[cur_pos][prev_pos] * self.P_word_pos[cur_pos][word]
                         else:
                             P_Factors += self.P_transition[cur_pos][prev_pos] * 0.0000001
                     tau_table[-counter][-1][prev_pos] = P_Factors
             else:
-                for prev_pos in self.ALL_POS:
+                for prev_pos in Solver.ALL_POS:
                     P_Factors = 0.0
-                    for cur_pos in self.ALL_POS:
+                    for cur_pos in Solver.ALL_POS:
                         if word in self.P_word_pos[cur_pos]:
-                            P_Factors += self.P_transition[cur_pos][prev_pos] * self.P_word_pos[cur_pos][word] * tau_table[-counter+1][-1][cur_pos]
+                            P_Factors += self.P_transition[cur_pos][prev_pos] \
+                                         * self.P_word_pos[cur_pos][word] \
+                                         * tau_table[-counter+1][-1][cur_pos]
                         else:
-                            P_Factors += self.P_transition[cur_pos][prev_pos] * 0.0000001 * tau_table[-counter+1][-1][cur_pos]
+                            P_Factors += self.P_transition[cur_pos][prev_pos] \
+                                         * 0.0000001 \
+                                         * tau_table[-counter+1][-1][cur_pos]
                     tau_table[-counter][-1][prev_pos] = P_Factors
 
         # Calculate Maximum probability of each word belonging to a POS, independent of other words
         for word in range(len(tau_table)):
             (max_prob, max_pos) = (0, "")
-            for pos in self.ALL_POS:
+            for pos in Solver.ALL_POS:
                 if word < len(tau_table) - 1:
                     (max_prob, max_pos) = max((max_prob, max_pos), ((tau_table[word][0][pos] * tau_table[word+1][1][pos]), pos))
                 else:
