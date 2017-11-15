@@ -8,7 +8,66 @@
 #
 #
 ####
-# Put your report here!!
+'''
+Train data:
+Three probabilities are calculated from the train data to predict part of speech(POS) of a sentence
+1.  Prior Probability ( Probability of each part of speech from all given words ) -
+    A dictionary ( hash os pos ) is used to Prior probability of pos. ["P_pos"]
+    Initially train data is parsed line by line. Each line consists of (sentence, pos_bag) pair.
+    From pos_bag of sentence, each word's pos counter is incremented by indexing "P_pos".
+    After parsing all data, each counter of pos is divided by total number of words.
+
+2.  Transition Probability ( Probability of transition from previous pos to next pos ) -
+    A dictionary of dictionary ( hash of hash of pos given pos) is used to store transition probability ["P_Transition"]
+    Using train data, from every second word its respective pos is indexed as first dimension in "P_transition",
+    previous word pos is indexed as second dimension. Number of such pair is maintained as a counter in "P_transition"
+    After parsing all data, each counter value is divided by all possible transition from respective pos.
+
+3.  Emission probablity ( Probablity of given word belongs to a particular pos ) -
+    A dictionary of dictionary ( hash of hash of word given pos ) is used to store the emission probabilities ["P_word_pos"]
+    From train data, each word and its respective pos is maintained as a counter in "P_word_pos" with pos indexed as
+    first dimension and the word as second dimension
+    After all data is parsed, each word's pos is divided by the word appeared as different pos
+
+Simplified Model:
+    Part of Speech tagging of sentence using simplified follows a simple Naive Bayes expansion
+                                P(S|W) = P(W|S) * P(S) / P(W)
+    This can be generalized for all pos and find the maximum pos probability for each word.
+                             s'[i] = arg max P (S[i]  = s[i] |W ).
+    For every first word of a sentence, maximum likelihood of the word over all pos multiplied by corresponding intital
+    probability of the pos
+    Subsequent words pos is estimated by finding maximum likelihood of the word over all pos and multiplied by corresponding
+    prior probability of the pos.
+    Denominator of prior probability of sentence is ignored since it will be same for each word.
+
+Variable Elimination:
+    In above method ( simplified ) dependency of word in predicting pos of every other word is not handled.
+    Hence, solving the question by adding above dependency of words in Bayes Net will prediciting pos of sentence better.
+    A tau_table with size equal to number of words in a sentence is created.
+    For each word two dictionaries are created. First dictionary uses the concept of forward elimination where given word 
+    is marginalized overall previous words on pos including current word all pos. Second dictionary stores follows the concept of
+    backward elimination where a word is marginalized overall future words on pos including current word all pos.
+    At the end for for every word, maximum product of forward eliminated probabilities and backward eliminated probablities is
+    assigned.
+    We need to estimate:
+                            P(yi|x1, ..., xT ) = P(x1, x2, ..., xT, y1, y2, .. , yi, .., yT )
+    Using Bayes Net we can write all factors as ( estimating a words pos (yi is word[i] and x[i] is respective pos)),
+                    P(yi|x1, ..., xT ) = P(y1) * P(x1|y1) * P(y2|y1) * P(x2|y2)... * P(yT |yT ) * P(xT|yT )
+    Forward Elimination:
+        First word is marginalized overall pos and stored in tau_table as:
+                                          tau_table[x[1]][0] = P(y[1]) * P(x[1] | y[1]) * P(y[2]|y[1])
+        Similarily, following words are marginalized alongwith previos tau_table values (as a result all previous words will
+        be marginalized with current word )
+                                  tau_table[x[i]][0] = P(x[i]|y[i]) * P(y[i]|y[i-1]) * tau_table(x[i-1])[0]
+    Backward Elimination:
+        Last word in marginalized and stored in last index of tau table
+                                          tau_table[x1][0] = P(x[T] | y[T])P(y[T] | y[T-1])
+        Similarily, all previos words are marginalized alongwith future tau_table values (as a result all future words
+        will be marginalized with current word )
+                                tau_table[x[i]][1] = P(x[i] | y[i]) * P(y[i+1] | y[i]) * tau_table(x[i+1])[1]
+    Finally for each word, maximum from every pos with forward and backward eliminated values are multiplied and assigned.
+
+'''
 ####
 
 import math
@@ -27,6 +86,8 @@ class Solver:
     P_pos = {}
     # Transition probablity
     P_transition = {}
+    # Intital Probability of pos
+    P_initial = {}
 
     # Calculate the log of the posterior probability of a given sentence
     # with a given part-of-speech labeling
