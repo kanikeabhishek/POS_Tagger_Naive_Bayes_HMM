@@ -3,9 +3,24 @@
 # ./ocr.py : Perform optical character recognition, usage:
 #     ./ocr.py train-image-file.png train-text.txt test-image-file.png
 # 
-# Authors: (insert names here)
+# Authors: Abhishek Kanike, Preetham Kowshik, Chuhua Wang,
 # (based on skeleton code by D. Crandall, Oct 2017)
 #
+# Report:
+#
+# We first training the data the get the initial probability, which is the probability that a sentence
+# starts with a certain character (total 72 character). Then it was formed into a dictionary in the format
+# of {'A': prob, 'B': prob.....}.
+#
+# The transition probability P(Letter_t+1|Letter_t) is calculated using the training data. The function
+# calculate_transition_probability() returns a dictionary of dictionaries:
+# {'A':{'A':prob, 'B':prob,...},'B':{'A':prob, 'B':prob,...}}
+#
+# Calculating emission probability P(Image|Letter) is slightly complicated than Part1. Each Image is represented as
+# a 25*14 matrix, so we first need to calculate the probability for each pixel P(Image_pixel|Letter).
+# After P(Image_pixel|Letter) is calculated, we insert the testing image and multiply each of them
+# to get the P(Image|Letter). The emission probability is dictionary of dictionaries: {Letter:{Image:prob...}...}
+
 from __future__ import division
 from PIL import Image, ImageDraw, ImageFont
 import math
@@ -29,9 +44,8 @@ def load_letters(fname):
 
 
 def load_training_letters(fname):
-    TRAIN_LETTERS="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789(),.-!?\"' "
     letter_images = load_letters(fname)
-    return { TRAIN_LETTERS[i]: letter_images[i] for i in range(0, len(TRAIN_LETTERS) ) }
+    return { LETTERS[i]: letter_images[i] for i in range(0, len(LETTERS) ) }
 
 def read_train_file(fname):
     """
@@ -48,10 +62,9 @@ def calculate_initial_prob(train_file):
     :param train_file
     :return: dict
     """
-    TRAIN_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789(),.-!?\"' "
-    initial_counts = {TRAIN_LETTERS[i]: 0 for i in range(0, len(TRAIN_LETTERS))}
+    initial_counts = {LETTERS[i]: 0 for i in range(0, len(LETTERS))}
     for s in train_file:
-        if s[0] in TRAIN_LETTERS:
+        if s[0] in LETTERS:
             initial_counts[s[0]] +=1
     return {k: -math.log((v+0.00001) / (total+0.00001)) for total in (sum(initial_counts.itervalues(), 0.0),) for k, v in initial_counts.iteritems()}
 
@@ -60,7 +73,7 @@ def calculate_transition_probability(train_file):
     """
     calculate the transition probability
     :param train_file: Train file name
-    :return:
+    :return: dict of dicts
     """
     initial_transition_count= {letter1: {letter2: 0 for letter2 in LETTERS} for letter1 in LETTERS}
     for le in initial_transition_count:
@@ -73,13 +86,17 @@ def calculate_transition_probability(train_file):
                     initial_transition_count[s[i]][s[i+1]] +=1
         if s[-1] in LETTERS:
             initial_transition_count[s[-1]]['End'] +=1
-
+                    # prevent zero division
     return {l:{k: -math.log((v+0.00001) / (total+0.00001)) for total in (sum(initial_transition_count[l].itervalues(), 0.0),)
               for k, v in initial_transition_count[l].iteritems()} for l in initial_transition_count}
-    # +1 to prevent zero division
+
 
 #
 def calculate_emission():
+    """
+    Put the emission probability in to format {Letter:{Image:prob...}...}
+    :return: dict of dicts {Letter:{Image:prob...}...}
+    """
     emi = {}
     for l in LETTERS:
         emi[l] = {}
@@ -91,7 +108,7 @@ def calculate_emission():
 def train_emission():
     """
     Get P(Image_pixel|Letter)
-    :return:
+    :return: list of lists of dicts
     """
     black_e=[]
 
@@ -115,7 +132,7 @@ def train_emission():
 def simplified():
     """
     Simplified classification
-    :return:
+    :return: recognized string and a probability list ({Image:{Letter:prob...}...})
     """
     prob=[]
     recog = ''
@@ -133,11 +150,10 @@ def simplified():
                 elif test_letters[n][i][j] == '@':
                     count +=1
 
+        # blank space
         if count > 340:
             prob[n][le] =-10
             recog += ' '
-        # elif count == 338:
-        #     recog += '.'
         else:
             recog += min(prob[0],key=prob[n].get)
     print 'Simple: ' + recog
@@ -147,7 +163,7 @@ def simplified():
 def hmm_ve():
     """
     Variable elimination
-    :return:
+    :return: recognized string
     """
     recog = []
     tau_prev = {}
@@ -167,12 +183,12 @@ def hmm_ve():
     print 'HMM VE: ' + ''.join(min(recog[i],key=recog[i].get) for i in range(len(recog)))
 
 
-# For Viterbi, the code was implemented base on the pseudocode in
+# The Viterbi Decoding code was implemented base on the pseudocode in
 # https://en.wikipedia.org/wiki/Viterbi_algorithm
 def hmm_viterbi():
     """
-    Viterbi using dynamic programming
-    :return:
+    Viterbi Decoding using dynamic programming
+    :return: recognized string
     """
     V = [{}]
     # base case
@@ -206,7 +222,6 @@ def hmm_viterbi():
     for t in range(len(V) - 2, -1, -1):
         recog.insert(0, V[t + 1][previous]["prev"])
         previous = V[t + 1][previous]["prev"]
-
     print 'HMM MAP: '+''.join(recog)
 
 
@@ -226,9 +241,12 @@ transition_prob = calculate_transition_probability(train_txt)
 # Get P(Image_pixel|Letter) in order to calculate P(Image|Letter)
 emission_prob = train_emission()
 
+# Simplified classification
 # calculate the probability while do the simplified classification
 prob = simplified()
 # put the emission probability in to format {Letter:{Image:prob...}...}
 emi = calculate_emission()
+# Variable Elimination
 hmm_ve()
+# Viterbi Decoding
 hmm_viterbi()
