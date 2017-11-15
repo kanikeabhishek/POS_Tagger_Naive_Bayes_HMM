@@ -2,7 +2,7 @@
 ###################################
 # CS B551 Fall 2017, Assignment #3
 #
-# Your names and user ids:
+# Your names and user ids: Abhishek Kanike(abkanike),Chuhua Wang(cw234),Preetham Kowshik(pkowshik),
 #
 # (Based on skeleton code by D. Crandall)
 #
@@ -31,7 +31,7 @@ Three probabilities are calculated from the train data to predict part of speech
 
 Posterior Probability:
     We use the model 1a irrespective of the algorithm(as discussed in class) inorder to calculate the posterior probabilities.
-    Bayes law(applied on Bayes net 1a) is used to calculate the posterior probability given setence and pos of the respective words. The log the posterior probability
+    Bayes law(applied on Bayes net 1) is used to calculate the posterior probability given setence and pos of the respective words. The log the posterior probability
     is returned.
 
 Simplified Model:
