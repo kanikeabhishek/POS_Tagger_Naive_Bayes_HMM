@@ -8,7 +8,7 @@
 #
 #########
 # Report:
-#
+# The training data
 # We first training the data the get the initial probability P(Letter), which is the probability that a sentence
 # starts with a certain character (total 72 character). Then it was formed into a dictionary in the format
 # of {'A': -log(prob), 'B': -log(prob).....}.
@@ -29,11 +29,23 @@
 # letter'[i] = arg min -log(P (Letter[i]  = letter[i]| Image)).
 # Denominator of prior probability is ignored since it will be same for each Image.
 # Note, one additional condition is added when black pixel is less than 8, a -10 weight will be assigned to blank space.
-# The Variable Elimination is similar to part1, while only forward algorithm is used. The Viterbi
+# The Variable Elimination is similar to part1, while only forward algorithm is used.
+# The Viterbi algorithm calculated the posterior using Prod P(Image_pixel_i|Letter)
 # was implemented using the pseudocode on https://en.wikipedia.org/wiki/Viterbi_algorithm.
 #
 #
-# Results:
+# Sample Results:
+
+# ./ocr.py" courier-train.png bc.train test-2-0.png
+# Simple: Nos! 14-556! Argued April 28, 2015 - Decided June 26, 2015
+# HMM VE: Nos. 14-556! Argued April 28, 2015 - Decided June 26, 2015
+# HMM MAP: Nos. 14-556. Argued April 28, 2015 - Dedided June 26, 2015
+
+# ./ocr.py" courier-train.png bc.train test-6-0.png
+# Simple: As sbme bf the petitibners in these cases demonstrate, marriage
+# HMM VE: As some bf the petitibners in these cases demonstrate, marriage
+# HMM MAP: As some of the petitioners in these cases demonstratey marriage
+
 # ./ocr.py" courier-train.png bc.train test-17-0.png
 # Simple: It is so ordered.
 # HMM VE: Tt is so ordered.
