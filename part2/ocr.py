@@ -3,23 +3,32 @@
 # ./ocr.py : Perform optical character recognition, usage:
 #     ./ocr.py train-image-file.png train-text.txt test-image-file.png
 # 
-# Authors: Abhishek Kanike, Preetham Kowshik, Chuhua Wang,
+# Authors: Abhishek Kanike(abkanike), Preetham Kowshik(pkowshik), Chuhua Wang(cw234)
 # (based on skeleton code by D. Crandall, Oct 2017)
 #
+#########
 # Report:
 #
 # We first training the data the get the initial probability, which is the probability that a sentence
 # starts with a certain character (total 72 character). Then it was formed into a dictionary in the format
-# of {'A': prob, 'B': prob.....}.
+# of {'A': -log(prob), 'B': -log(prob).....}.
 #
 # The transition probability P(Letter_t+1|Letter_t) is calculated using the training data. The function
 # calculate_transition_probability() returns a dictionary of dictionaries:
-# {'A':{'A':prob, 'B':prob,...},'B':{'A':prob, 'B':prob,...}}
+# {'A':{'A':-log(prob), 'B':-log(prob),...},'B':{'A':-log(prob), 'B':-log(prob),...}}
 #
 # Calculating emission probability P(Image|Letter) is slightly complicated than Part1. Each Image is represented as
-# a 25*14 matrix, so we first need to calculate the probability for each pixel P(Image_pixel|Letter).
+# a 25*14 matrix, so we first need to calculate the probability for each pixel is black(*) P(Image_pixel|Letter).
 # After P(Image_pixel|Letter) is calculated, we insert the testing image and multiply each of them
 # to get the P(Image|Letter). The emission probability is dictionary of dictionaries: {Letter:{Image:prob...}...}
+#
+#
+# The simplified Bayes net is easy, same as part1. However one additional condition is added when black pixel is less
+# 10, a -10 weight will be assign to
+#
+#
+#
+#
 
 from __future__ import division
 from PIL import Image, ImageDraw, ImageFont
@@ -30,6 +39,7 @@ CHARACTER_WIDTH=14
 CHARACTER_HEIGHT=25
 # all letters that we assume exists in the training data
 LETTERS="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789(),.-!?\"' "
+
 
 def load_letters(fname):
     im = Image.open(fname)
@@ -46,6 +56,7 @@ def load_letters(fname):
 def load_training_letters(fname):
     letter_images = load_letters(fname)
     return { LETTERS[i]: letter_images[i] for i in range(0, len(LETTERS) ) }
+
 
 def read_train_file(fname):
     """
@@ -151,8 +162,8 @@ def simplified():
                     count +=1
 
         # blank space
-        if count > 340:
-            prob[n][le] =-10
+        if count > 345:
+            prob[n][le] *= -10
             recog += ' '
         else:
             recog += min(prob[0],key=prob[n].get)
