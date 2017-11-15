@@ -24,10 +24,8 @@
 #
 #
 # The simplified Bayes net is easy, same as part1. However one additional condition is added when black pixel is less
-# 10, a -10 weight will be assign to
-#
-#
-#
+# 8, a -10 weight will be assigned to blank space. The Variable Elimination is similar to part1, and the Viterbi
+# was implemented using the pseudocode on https://en.wikipedia.org/wiki/Viterbi_algorithm.
 #
 
 from __future__ import division
@@ -87,16 +85,12 @@ def calculate_transition_probability(train_file):
     :return: dict of dicts
     """
     initial_transition_count= {letter1: {letter2: 0 for letter2 in LETTERS} for letter1 in LETTERS}
-    for le in initial_transition_count:
-        initial_transition_count[le]['End'] = 0
     for s in train_file:
         s = s.rstrip('\n')
         for i in range(0,len(s)-1):
             if s[i] in LETTERS:
                 if s[i+1] in LETTERS:
                     initial_transition_count[s[i]][s[i+1]] +=1
-        if s[-1] in LETTERS:
-            initial_transition_count[s[-1]]['End'] +=1
                     # prevent zero division
     return {l:{k: -math.log((v+0.00001) / (total+0.00001)) for total in (sum(initial_transition_count[l].itervalues(), 0.0),)
               for k, v in initial_transition_count[l].iteritems()} for l in initial_transition_count}
@@ -162,7 +156,7 @@ def simplified():
                     count +=1
 
         # blank space
-        if count > 345:
+        if count > 342:
             prob[n][le] *= -10
             recog += ' '
         else:
@@ -194,7 +188,7 @@ def hmm_ve():
     print 'HMM VE: ' + ''.join(min(recog[i],key=recog[i].get) for i in range(len(recog)))
 
 
-# The Viterbi Decoding code was implemented base on the pseudocode in
+# The Viterbi Decoding code was implemented base on the pseudocode on
 # https://en.wikipedia.org/wiki/Viterbi_algorithm
 def hmm_viterbi():
     """
