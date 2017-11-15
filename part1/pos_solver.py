@@ -67,6 +67,26 @@ Variable Elimination:
                                 tau_table[x[i]][1] = P(x[i] | y[i]) * P(y[i+1] | y[i]) * tau_table(x[i+1])[1]
     Finally for each word, maximum from every pos with forward and backward eliminated values are multiplied and assigned.
 
+Assumption:
+    For every new word ( not present in train data ) from test data, probability of word given pos is assigned with 0.0000001
+    value, also if a word is not present in any pos, a smoothing value of 0.0000001 is assigned so that, a near estimate to
+    a particular pos will be determined
+
+Results:
+    With above model following are the accuracies achieved on given test data ( bc.test ):
+    ==> So far scored 2000 sentences with 29442 words.
+                       Words correct:     Sentences correct:
+       0. Ground truth:      100.00%              100.00%
+         1. Simplified:       93.62%               45.00%
+             2. HMM VE:       95.21%               55.20%
+            3. HMM MAP:       95.18%               55.30%
+    When initial probability is total is not assumed for the first word of every sentence following results are observed.
+    ==> So far scored 2000 sentences with 29442 words.
+                       Words correct:     Sentences correct:
+       0. Ground truth:      100.00%              100.00%
+         1. Simplified:       93.92%               47.45%
+             2. HMM VE:       95.24%               55.40%
+            3. HMM MAP:       95.22%               55.50%
 '''
 ####
 
