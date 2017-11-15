@@ -1,15 +1,15 @@
 #!/usr/bin/python
 #
 # ./ocr.py : Perform optical character recognition, usage:
-#     ./ocr.py train-image-file.png train-text.txt test-image-file.png
+#     ./ocr.py train-image-file.png bc.train txt test-image-file.png
 # 
 # Authors: Abhishek Kanike(abkanike), Preetham Kowshik(pkowshik), Chuhua Wang(cw234)
 # (based on skeleton code by D. Crandall, Oct 2017)
 #
 #########
 # Report:
-#
-# We first training the data the get the initial probability, which is the probability that a sentence
+# File 'bc.train' from part1 is used as training data for ocr. We can actually t
+# We first training the data the get the initial probability P(Letter), which is the probability that a sentence
 # starts with a certain character (total 72 character). Then it was formed into a dictionary in the format
 # of {'A': -log(prob), 'B': -log(prob).....}.
 #
@@ -20,14 +20,36 @@
 # Calculating emission probability P(Image|Letter) is slightly complicated than Part1. Each Image is represented as
 # a 25*14 matrix, so we first need to calculate the probability for each pixel is black(*) P(Image_pixel|Letter).
 # After P(Image_pixel|Letter) is calculated, we insert the testing image and multiply each of them
-# to get the P(Image|Letter). The emission probability is dictionary of dictionaries: {Letter:{Image:prob...}...}
+# to get the P(Image|Letter).
+# P(Image|Letter) = Prod_i:350 P(Image_pixel_i|Letter)
+# The emission probability is dictionary of dictionaries: {Letter:{Image:prob...}...}
 #
-#
-# The simplified Bayes net is easy, same as part1. However one additional condition is added when black pixel is less
-# 8, a -10 weight will be assigned to blank space. The Variable Elimination is similar to part1, and the Viterbi
+# The simplified Bayes net is easy, same as part1.
+# P(Letter|Image) = P(Image|Letter) * P(Letter) / P(Image))
+# letter'[i] = arg min -log(P (Letter[i]  = letter[i]| Image)).
+# Denominator of prior probability is ignored since it will be same for each Image.
+# Note, one additional condition is added when black pixel is less than 8, a -10 weight will be assigned to blank space.
+# The Variable Elimination is similar to part1, while only forward algorithm is used.
+# The Viterbi algorithm calculated the posterior using Prod P(Image_pixel_i|Letter)
 # was implemented using the pseudocode on https://en.wikipedia.org/wiki/Viterbi_algorithm.
 #
+#
+# Sample Results:
 
+# ./ocr.py" courier-train.png bc.train test-2-0.png
+# Simple: Nos! 14-556! Argued April 28, 2015 - Decided June 26, 2015
+# HMM VE: Nos. 14-556! Argued April 28, 2015 - Decided June 26, 2015
+# HMM MAP: Nos. 14-556. Argued April 28, 2015 - Dedided June 26, 2015
+
+# ./ocr.py" courier-train.png bc.train test-6-0.png
+# Simple: As sbme bf the petitibners in these cases demonstrate, marriage
+# HMM VE: As some bf the petitibners in these cases demonstrate, marriage
+# HMM MAP: As some of the petitioners in these cases demonstratey marriage
+
+# ./ocr.py" courier-train.png bc.train test-17-0.png
+# Simple: It is so ordered.
+# HMM VE: Tt is so ordered.
+# HMM MAP: It is so ordered.
 from __future__ import division
 from PIL import Image, ImageDraw, ImageFont
 import math
